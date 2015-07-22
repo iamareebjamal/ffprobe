@@ -63,16 +63,17 @@ class FFProbe(object):
             self.__dict__[key] = json_out["format"][key]
 
         for stream in json_out["streams"]:
-            if "duration" not in stream or stream["duration"] == 0.0:
-                stream["duration"] = self.duration
-
             self.streams.append(FFStream(stream))
 
-        for a in self.streams:
-            if a.isAudio():
-                self.audio.append(a)
-            if a.isVideo():
-                self.video.append(a)
+        for stream in self.streams:
+            if stream.isAudio() or stream.isVideo():
+                if "duration" not in stream.__dict__ or stream.__dict__["duration"] == 0.0:
+                    stream.__dict__["duration"] = self.duration
+
+            if stream.isAudio():
+                self.audio.append(stream)
+            if stream.isVideo():
+                self.video.append(stream)
 
 class FFStream(object):
     """
@@ -82,12 +83,22 @@ class FFStream(object):
         for key in obj.keys():
             self.__dict__[key] = obj[key]
 
+    def isData(self):
+        """
+        Is this stream labelled as an data stream?
+        """
+        val = False
+        if 'codec_type' in self.__dict__:
+            if str(self.__dict__['codec_type']) == 'data':
+                val = True
+        return val
+
     def isAudio(self):
         """
         Is this stream labelled as an audio stream?
         """
         val = False
-        if self.__dict__['codec_type']:
+        if 'codec_type' in self.__dict__:
             if str(self.__dict__['codec_type']) == 'audio':
                 val = True
         return val
@@ -97,7 +108,7 @@ class FFStream(object):
         Is the stream labelled as a video stream.
         """
         val = False
-        if self.__dict__['codec_type']:
+        if 'codec_type' in self.__dict__:
             if self.codec_type == 'video':
                 val = True
         return val
@@ -107,7 +118,7 @@ class FFStream(object):
         Is the stream labelled as a subtitle stream.
         """
         val = False
-        if self.__dict__['codec_type']:
+        if 'codec_type' in self.__dict__:
             if str(self.codec_type)=='subtitle':
                 val = True
         return val
@@ -119,7 +130,7 @@ class FFStream(object):
         """
         size = None
         if self.isVideo():
-            if self.__dict__['width'] and self.__dict__['height']:
+            if 'width' in self.__dict__ and 'height' in self.__dict__:
                 try:
                     size = (int(self.__dict__['width']),int(self.__dict__['height']))
                 except Exception as e:
@@ -134,7 +145,7 @@ class FFStream(object):
         """
         f = None
         if self.isVideo():
-            if self.__dict__['pix_fmt']:
+            if 'pix_fmt' in self.__dict__:
                 f = self.__dict__['pix_fmt']
         return f
 
@@ -144,7 +155,7 @@ class FFStream(object):
         """
         f = 0
         if self.isVideo() or self.isAudio():
-            if self.__dict__['nb_frames']:
+            if 'nb_frames' in self.__dict__:
                 try:
                     f = int(self.__dict__['nb_frames'])
                 except Exception as e:
@@ -158,7 +169,7 @@ class FFStream(object):
         """
         f = 0.0
         if self.isVideo() or self.isAudio():
-            if self.__dict__['duration']:
+            if 'duration' in self.__dict__:
                 try:
                     f = float(self.__dict__['duration'])
                 except Exception as e:
@@ -170,7 +181,7 @@ class FFStream(object):
         Returns language tag of stream. e.g. eng
         """
         lang = None
-        if self.__dict__['TAG:language']:
+        if 'TAG:language' in self.__dict__:
             lang = self.__dict__['TAG:language']
         return lang
 
@@ -179,7 +190,7 @@ class FFStream(object):
         Returns a string representation of the stream codec.
         """
         codec_name = None
-        if self.__dict__['codec_name']:
+        if 'codec_name' in self.__dict__:
             codec_name = self.__dict__['codec_name']
         return codec_name
 
@@ -188,7 +199,7 @@ class FFStream(object):
         Returns a long representation of the stream codec.
         """
         codec_d = None
-        if self.__dict__['codec_long_name']:
+        if 'codec_long_name' in self.__dict__:
             codec_d = self.__dict__['codec_long_name']
         return codec_d
 
@@ -197,7 +208,7 @@ class FFStream(object):
         Returns a short representative tag of the stream codec.
         """
         codec_t = None
-        if self.__dict__['codec_tag_string']:
+        if 'codec_tag_string' in self.__dict__:
             codec_t = self.__dict__['codec_tag_string']
         return codec_t
 
@@ -206,7 +217,7 @@ class FFStream(object):
         Returns bitrate as an integer in bps
         """
         b = 0
-        if self.__dict__['bit_rate']:
+        if 'bit_rate' in self.__dict__:
             try:
                 b = int(self.__dict__['bit_rate'])
             except Exception as e:
@@ -218,7 +229,7 @@ class FFStream(object):
         Returns the framerate as an float in frames/second
         """
         f = 0.0
-        if self.__dict__['codec_type']:
+        if 'codec_type' in self.__dict__:
             if str(self.__dict__['codec_type']) == 'video':
                 if self.__dict__['nb_frames'] and self.__dict__['duration']:
                     try:
