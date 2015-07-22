@@ -12,6 +12,7 @@ import os
 import sys
 from os import listdir
 from os.path import isfile, join
+import json
 
 class FFProbe(object):
     """
@@ -31,54 +32,55 @@ class FFProbe(object):
 
         # If source is file and it exists the use path, otherwise
         # open file and send contents to ffprobe through stdin
+        DEVNULL = open(os.devnull, 'wb')
+        args = [ffprobe_cmd, "-show_streams", "-print_format", "json", "-show_format", "-i"]
         if os.path.isfile(source):
-            args = [ffprobe_cmd, "-show_streams", "-i", source]
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
+            args.append(source)
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=DEVNULL)
         else:
-            args = [ffprobe_cmd, "-show_streams", "-i", "-"]
-            proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
+            args.append("-")
+            proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE, stderr=DEVNULL)
 
-        self.format = None
-        self.created = None
-        self.duration = None
-        self.start = None
-        self.bitrate = None
         self.streams = []
         self.video = []
         self.audio = []
         self.returncode = None
-        datalines = []
+
+        raw_out = ""
         while self.returncode is None:
-            for output in [proc.stdout, proc.stderr]:
-                for a in iter(output.readline, b''):
-                    if re.match('\[STREAM\]', a):
-                        datalines = []
-                    elif re.match('\[\/STREAM\]', a):
-                        self.streams.append(FFStream(datalines))
-                        datalines = []
-                    else:
-                        datalines.append(a)
+            for line in proc.stdout:
+                raw_out += line
             self.returncode = proc.poll()
+
         proc.stdout.close()
-        proc.stderr.close()
+
+        if self.returncode != 0:
+            raise IOError('FFProbe failed')
+
+        json_out = json.loads(raw_out)
+
+        for key in json_out["format"]:
+            self.__dict__[key] = json_out["format"][key]
+
+        for stream in json_out["streams"]:
+            if "duration" not in stream or stream["duration"] == 0.0:
+                stream["duration"] = self.duration
+
+            self.streams.append(FFStream(stream))
+
         for a in self.streams:
             if a.isAudio():
                 self.audio.append(a)
             if a.isVideo():
                 self.video.append(a)
-        self.datalines = datalines
-
 
 class FFStream(object):
     """
     An object representation of an individual stream in a multimedia file.
     """
-    def __init__(self, datalines):
-        for a in datalines:
-            (key, val) = a.strip().split('=')
-            self.__dict__[key] = val
+    def __init__(self, obj):
+        for key in obj.keys():
+            self.__dict__[key] = obj[key]
 
     def isAudio(self):
         """
@@ -225,7 +227,7 @@ class FFStream(object):
                         pass
         return f
 
-def print_meta(path):
+def printMeta(path):
     m = FFProbe(path)
     name = os.path.split(path)[1]
     stream_count = 1
@@ -247,12 +249,12 @@ if __name__ == '__main__':
         path = sys.argv[1]
 
         if os.path.isfile(path):
-            print_meta(path)
+            printMeta(path)
         elif os.path.isdir(path):
             files = [ f for f in listdir(path) if isfile(join(path,f)) ]
             for file in files:
             	if not file.startswith("."):
-                    print_meta(path + file)
+                    printMeta(path + file)
         else:
             sys.exit(1)
     else:
