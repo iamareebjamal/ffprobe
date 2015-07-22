@@ -231,7 +231,7 @@ class FFStream(object):
         f = 0.0
         if 'codec_type' in self.__dict__:
             if str(self.__dict__['codec_type']) == 'video':
-                if self.__dict__['nb_frames'] and self.__dict__['duration']:
+                if 'nb_frames' in self.__dict__ and 'duration' in self.__dict__:
                     try:
                         f = int(self.__dict__['nb_frames']/self.__dict__['duration'])
                     except Exception as e:
@@ -251,7 +251,7 @@ def printMeta(path):
             print "Frames: %i" % s.frames()
             print "Width: %i" % s.frameSize()[0]
             print "Height: %i" %  s.frameSize()[1]
-        print "Duration: %i" % s.durationSeconds()
+        print "Duration: %f" % s.durationSeconds()
         print "Bitrate: %i" % s.bitrate()
         print ""
 
