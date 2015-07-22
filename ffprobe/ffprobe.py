@@ -9,12 +9,16 @@ version = '0.1'
 import subprocess
 import re
 import os
-
+import sys
+from os import listdir
+from os.path import isfile, join
 
 class FFProbe(object):
     """
     FFProbe wraps the ffprobe command and pulls the data into an object form::
-        metadata=FFProbe('multimedia-file.mov')
+        metadata = FFProbe('multimedia-file.mov')
+        OR
+        metadata = FFPRobe(file_contents)
     """
     def __init__(self, source):
         ffprobe_cmd = os.environ.get('FFROBE', 'ffprobe')
@@ -25,15 +29,17 @@ class FFProbe(object):
         except:
             raise IOError('ffprobe not found.')
 
-        # source is either a path or an input stream
-        if isinstance(source, str):
-            source = open(source)
-        stdin = source
+        # If source is file and it exists the use path, otherwise
+        # open file and send contents to ffprobe through stdin
+        if os.path.isfile(source):
+            args = [ffprobe_cmd, "-show_streams", "-i", source]
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+        else:
+            args = [ffprobe_cmd, "-show_streams", "-i", "-"]
+            proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
 
-        args = [ffprobe_cmd, "-show_streams", "-i", "-"]
-
-        proc = subprocess.Popen(args, stdin=stdin, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
         self.format = None
         self.created = None
         self.duration = None
@@ -115,7 +121,7 @@ class FFStream(object):
                 try:
                     size = (int(self.__dict__['width']),int(self.__dict__['height']))
                 except Exception as e:
-                    print "None integer size %s:%s" %(str(self.__dict__['width']),str(+self.__dict__['height']))
+                    pass
                     size = (0,0)
         return size
 
@@ -140,7 +146,7 @@ class FFStream(object):
                 try:
                     f = int(self.__dict__['nb_frames'])
                 except Exception as e:
-                    print "None integer frame count"
+                    pass
         return f
 
     def durationSeconds(self):
@@ -154,7 +160,7 @@ class FFStream(object):
                 try:
                     f = float(self.__dict__['duration'])
                 except Exception as e:
-                    print "None numeric duration"
+                    pass
         return f
 
     def language(self):
@@ -202,8 +208,52 @@ class FFStream(object):
             try:
                 b = int(self.__dict__['bit_rate'])
             except Exception as e:
-                print "None integer bitrate"
+                pass
         return b
 
+    def frameRate(self):
+        """
+        Returns the framerate as an float in frames/second
+        """
+        f = 0.0
+        if self.__dict__['codec_type']:
+            if str(self.__dict__['codec_type']) == 'video':
+                if self.__dict__['nb_frames'] and self.__dict__['duration']:
+                    try:
+                        f = int(self.__dict__['nb_frames']/self.__dict__['duration'])
+                    except Exception as e:
+                        pass
+        return f
+
+def print_meta(path):
+    m = FFProbe(path)
+    name = os.path.split(path)[1]
+    stream_count = 1
+    for s in m.streams:
+        type = "Video" if s.isVideo else "Audio"
+        print "[ %s - Stream #%s - %s ]" % (name, stream_count, type)
+        stream_count += 1
+        if s.isVideo():
+            print "Framerate: %f" % s.frameRate()
+            print "Frames: %i" % s.frames()
+            print "Width: %i" % s.frameSize()[0]
+            print "Height: %i" %  s.frameSize()[1]
+        print "Duration: %i" % s.durationSeconds()
+        print "Bitrate: %i" % s.bitrate()
+        print ""
+
 if __name__ == '__main__':
-    print "Module ffprobe"
+    if len(sys.argv) == 2:
+        path = sys.argv[1]
+
+        if os.path.isfile(path):
+            print_meta(path)
+        elif os.path.isdir(path):
+            files = [ f for f in listdir(path) if isfile(join(path,f)) ]
+            for file in files:
+            	if not file.startswith("."):
+                    print_meta(path + file)
+        else:
+            sys.exit(1)
+    else:
+        print "Usage: python ffprobe.py <file>|<directory>"
