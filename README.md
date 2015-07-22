@@ -5,6 +5,8 @@ A wrapper around the ffprobe command to extract metadata from media files.
 
 # Usage
 
+## Library
+
 ```
 #!/usr/bin/env python
 
@@ -21,6 +23,12 @@ for s in metadata.streams:
   print "Duration: %i" % s.durationSeconds()
   print "Bitrate: %i" % s.bitrate()
 ```
+
+## Command line
+```python ffprobe.py <file>|<directory>```
+
+## Unit test
+```python ffprobe-test.py```
 
 # License
 (The MIT License)
