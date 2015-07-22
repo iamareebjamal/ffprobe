@@ -1,1 +1,2 @@
+v0.4, 07/22/2015 -- Command line use of python.py, durations were missing for some streams - fixed, input to FFProbe can be file path or raw file data (Jacob Zelek - jacob.zelek@gmail.com)
 v0.1, 01/06/2013 -- Initial release

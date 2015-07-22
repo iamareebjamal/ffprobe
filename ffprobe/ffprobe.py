@@ -4,7 +4,7 @@
 Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 """
 
-version = '0.1'
+version = '0.4'
 
 import subprocess
 import re
