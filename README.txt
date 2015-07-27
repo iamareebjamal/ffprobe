@@ -19,3 +19,4 @@ Usage::
           print "Height: %i" %  s.frameSize()[1]
       print "Duration: %i" % s.durationSeconds()
       print "Bitrate: %i" % s.bitrate()
+      print "Codec: %s" % s.codec()

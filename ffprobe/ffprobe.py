@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Filename: ffprobe.py
 """
-Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
+Python wrapper for ffprobe command line tool. ffprobe must exist in the path or in a common installation path
 """
 
 version = '0.4'
@@ -17,18 +17,38 @@ import json
 class FFProbe(object):
     """
     FFProbe wraps the ffprobe command and pulls the data into an object form::
-        metadata = FFProbe('multimedia-file.mov')
-        OR
-        metadata = FFPRobe(file_contents)
+    metadata = FFProbe('multimedia-file.mov')
+    OR
+    metadata = FFProbe(file_contents)
+    OR
+    metadata = FFProbe('multimedia-file.mov', ffprobe_path='/usr/local/bin/ffprobe')
     """
-    def __init__(self, source):
-        ffprobe_cmd = os.environ.get('FFROBE', 'ffprobe')
-        try:
-            with open(os.devnull, 'w') as tempf:
-                subprocess.check_call([ffprobe_cmd, "-h"], stdout=tempf,
-                                      stderr=tempf)
-        except:
-            raise IOError('ffprobe not found.')
+    def __init__(self, source, ffprobe_path=None):
+        ffprobe_cmd = None
+        if ffprobe_path is not None and os.path.exists(ffprobe_path):
+            ffprobe_cmd = ffprobe_path
+        else:
+            ffprobe_cmd = os.environ.get('FFPROBE', 'ffprobe')
+            try:
+                with open(os.devnull, 'w') as tempf:
+                    subprocess.check_call([ffprobe_cmd, "-h"], stdout=tempf,
+                                          stderr=tempf)
+            except:
+                paths = {
+                    "Windows": ["ffprobe.exe"],
+                    "Darwin": ["/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"],
+                    "Linux": ["/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"]
+                }
+
+                # Find path of transcoder
+                found = False
+                for path in paths[platform.system()]:
+                    if os.path.exists(path):
+                        ffprobe_cmd = path
+                        found = True
+
+                if not found:
+                    raise IOError('ffprobe not found')
 
         # If source is file and it exists the use path, otherwise
         # open file and send contents to ffprobe through stdin
@@ -44,6 +64,7 @@ class FFProbe(object):
         self.streams = []
         self.video = []
         self.audio = []
+        self.duration = 0.0
         self.returncode = None
 
         raw_out = ""
@@ -55,7 +76,7 @@ class FFProbe(object):
         proc.stdout.close()
 
         if self.returncode != 0:
-            raise IOError('FFProbe failed')
+            raise IOError('ffprobe failed')
 
         json_out = json.loads(raw_out)
 
@@ -74,6 +95,31 @@ class FFProbe(object):
                 self.audio.append(stream)
             if stream.isVideo():
                 self.video.append(stream)
+
+    def durationSeconds(self):
+        """
+        Returns the runtime duration of the file as a floating point number of seconds.
+        Returns 0.0 if value not found
+        """
+        f = 0.0
+        if 'duration' in self.__dict__:
+            try:
+                f = float(self.__dict__['duration'])
+            except Exception as e:
+                pass
+        return f
+
+    def bitrate(self):
+        """
+        Returns bitrate as an integer in bps
+        """
+        b = 0
+        if 'bit_rate' in self.__dict__:
+            try:
+                b = int(self.__dict__['bit_rate'])
+            except Exception as e:
+                pass
+        return b
 
 class FFStream(object):
     """

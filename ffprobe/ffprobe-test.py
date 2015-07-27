@@ -37,6 +37,8 @@ class TestFFProbe(unittest.TestCase):
 		for sample in samples:
 			print "Probing " + sample
 			metadata = FFProbe(self.tmp_dir + "/" + sample)
+			self.assertNotEqual(metadata.durationSeconds(), 0.0)
+			self.assertNotEqual(metadata.bitrate(), 0.0)
 			for stream in metadata.streams:
 				if stream.isAudio() or stream.isVideo():
 					self.assertNotEqual(stream.durationSeconds(), 0.0)
