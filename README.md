@@ -14,6 +14,9 @@ from ffprobe import FFProbe
 
 metadata = FFProbe("test-media-file.mov")
 
+print "Duration: %i" % metadata.durationSeconds()
+print "Bitrate: %i" % metadata.bitrate()
+
 for s in metadata.streams:
   if s.isVideo():
       print "Framerate: %f" % s.frameRate()
