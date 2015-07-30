@@ -13,6 +13,7 @@ Usage::
 
     print "Duration: %i" % metadata.durationSeconds()
     print "Bitrate: %i" % metadata.bitrate()
+    print "HTML5 Source Type: %s" % metadata.html5SourceType()
 
     for s in metadata.streams:
       if s.isVideo():
