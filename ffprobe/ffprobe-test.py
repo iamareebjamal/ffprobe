@@ -37,12 +37,12 @@ class TestFFProbe(unittest.TestCase):
 		for sample in samples:
 			print "Probing " + sample
 			metadata = FFProbe(self.tmp_dir + "/" + sample)
+			print "HTML5 Media Source Type: " + metadata.html5SourceType()
 			self.assertNotEqual(metadata.durationSeconds(), 0.0)
 			self.assertNotEqual(metadata.bitrate(), 0.0)
 			for stream in metadata.streams:
 				if stream.isAudio() or stream.isVideo():
 					self.assertNotEqual(stream.durationSeconds(), 0.0)
-					#self.assertNotEqual(stream.bitrate(), 0.0)
 
 				if stream.isVideo():
 					self.assertNotEqual(stream.frameSize(), (0,0))

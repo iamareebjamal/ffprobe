@@ -13,6 +13,7 @@ import sys
 from os import listdir
 from os.path import isfile, join
 import json
+import mimetypes
 
 class FFProbe(object):
     """
@@ -36,8 +37,8 @@ class FFProbe(object):
             except:
                 paths = {
                     "Windows": ["ffprobe.exe"],
-                    "Darwin": ["/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"],
-                    "Linux": ["/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"]
+                    "Darwin": ["ffprobe", "/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"],
+                    "Linux": ["ffprobe", "/opt/local/bin/ffprobe", "/usr/local/bin/ffprobe"]
                 }
 
                 # Find path of transcoder
@@ -50,22 +51,30 @@ class FFProbe(object):
                 if not found:
                     raise IOError('ffprobe not found')
 
+        self.streams = []
+        self.video = []
+        self.audio = []
+        self.duration = 0.0
+        self.audio_codec = None
+        self.video_codec = None
+        self.mimetype = None
+        self.returncode = None
+
         # If source is file and it exists the use path, otherwise
         # open file and send contents to ffprobe through stdin
         DEVNULL = open(os.devnull, 'wb')
         args = [ffprobe_cmd, "-show_streams", "-print_format", "json", "-show_format", "-i"]
         if os.path.isfile(source):
+            try:
+                type, encoding = mimetypes.guess_type(source)
+                self.mimetype = type
+            except:
+                pass
             args.append(source)
             proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=DEVNULL)
         else:
             args.append("-")
             proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE, stderr=DEVNULL)
-
-        self.streams = []
-        self.video = []
-        self.audio = []
-        self.duration = 0.0
-        self.returncode = None
 
         raw_out = ""
         while self.returncode is None:
@@ -93,8 +102,28 @@ class FFProbe(object):
 
             if stream.isAudio():
                 self.audio.append(stream)
+                if "codec_name" in stream.__dict__:
+                    self.audio_codec = stream.__dict__["codec_name"]
             if stream.isVideo():
                 self.video.append(stream)
+                if "codec_name" in stream.__dict__:
+                    self.video_codec = stream.__dict__["codec_name"]
+
+    # @todo Needs to follow http://tools.ietf.org/html/rfc6381
+    def html5SourceType(self):
+        str = ''
+        if self.mimetype is not None:
+            str += self.mimetype
+            if self.video_codec is not None or self.audio_codec is not None:
+                str += '; codecs="'
+                codecs = []
+                if self.video_codec is not None:
+                    codecs.append(self.video_codec)
+                if self.audio_codec is not None:
+                    codecs.append(self.audio_codec)
+                str += ', '.join(codecs)
+                str += '"'
+        return str
 
     def durationSeconds(self):
         """
