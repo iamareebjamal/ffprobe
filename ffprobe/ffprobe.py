@@ -104,6 +104,7 @@ class FFProbe(object):
                 self.video.append(stream)
 
     # @todo Needs to follow http://tools.ietf.org/html/rfc6381
+    # @todo Need to add mp4v and mp4a (aac)
     def html5SourceType(self):
         string = ''
         if self.mimetype is not None:
@@ -125,7 +126,9 @@ class FFProbe(object):
                             codec += '42E0'
                         elif profile == 'Main':
                             codec += '4D40'
-                        codec += str(video.__dict__["level"])
+                        elif profile == 'Extended':
+                            codec += '58A0'
+                        codec += hex(int(video.__dict__["level"]))[2:].upper()
                         codecs.append(codec)
                     else:
                         codecs.append(video.codec())
