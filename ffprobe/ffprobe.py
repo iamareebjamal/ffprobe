@@ -55,8 +55,6 @@ class FFProbe(object):
         self.video = []
         self.audio = []
         self.duration = 0.0
-        self.audio_codec = None
-        self.video_codec = None
         self.mimetype = None
         self.returncode = None
 
@@ -102,28 +100,43 @@ class FFProbe(object):
 
             if stream.isAudio():
                 self.audio.append(stream)
-                if "codec_name" in stream.__dict__:
-                    self.audio_codec = stream.__dict__["codec_name"]
             if stream.isVideo():
                 self.video.append(stream)
-                if "codec_name" in stream.__dict__:
-                    self.video_codec = stream.__dict__["codec_name"]
 
     # @todo Needs to follow http://tools.ietf.org/html/rfc6381
     def html5SourceType(self):
-        str = ''
+        string = ''
         if self.mimetype is not None:
-            str += self.mimetype
-            if self.video_codec is not None or self.audio_codec is not None:
-                str += '; codecs="'
+            string += self.mimetype
+            video = self.video[0]
+            audio = self.audio[0]
+            if video is not None or audio is not None:
+                string += '; codecs="'
                 codecs = []
-                if self.video_codec is not None:
-                    codecs.append(self.video_codec)
-                if self.audio_codec is not None:
-                    codecs.append(self.audio_codec)
-                str += ', '.join(codecs)
-                str += '"'
-        return str
+                if video is not None:
+                    if video.codec() == 'h264':
+                        codec = 'avc1.'
+                        profile = video.__dict__["profile"]
+                        if profile == 'High':
+                            codec += '6400'
+                        elif profile == 'Baseline':
+                            codec += '42E0'
+                        elif profile == 'Constrained Baseline':
+                            codec += '42E0'
+                        elif profile == 'Main':
+                            codec += '4D40'
+                        codec += str(video.__dict__["level"])
+                        codecs.append(codec)
+                    else:
+                        codecs.append(video.codec())
+                if audio is not None:
+                    if audio.codec() == 'aac':
+                        codecs.append('mp4a.40.2')
+                    else:
+                        codecs.append(audio.codec())
+                string += ', '.join(codecs)
+                string += '"'
+        return string
 
     def durationSeconds(self):
         """
