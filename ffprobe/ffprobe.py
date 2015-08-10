@@ -103,14 +103,25 @@ class FFProbe(object):
             if stream.isVideo():
                 self.video.append(stream)
 
+        # @todo If mp4 extension but no video stream then set mimetype to audio/mp4
+
     # @todo Needs to follow http://tools.ietf.org/html/rfc6381
     # @todo Need to add mp4v and mp4a (aac)
     def html5SourceType(self):
         string = ''
         if self.mimetype is not None:
+            if self.mimetype == 'audio/mpeg':
+                return self.mimetype
+
             string += self.mimetype
-            video = self.video[0]
-            audio = self.audio[0]
+
+            video = None
+            audio = None
+
+            if len(self.video) > 0:
+                video = self.video[0]
+            if len(self.audio) > 0:
+                audio = self.audio[0]
             if video is not None or audio is not None:
                 string += '; codecs="'
                 codecs = []
