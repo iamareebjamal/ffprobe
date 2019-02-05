@@ -113,7 +113,8 @@ class FFProbe:
             if stream.isVideo():
                 self.video.append(stream)
 
-        # @todo If mp4 extension but no video stream then set mimetype to audio/mp4
+        if self.mimetype == 'video/mp4' and len(self.video) == 0:
+            self.mimetype = 'audio/mp4'
 
     def __str__(self):
         return "<FFProbe mime='%s' streams='%s'>" % (self.html5SourceType(), str(self.streams))
@@ -126,10 +127,10 @@ class FFProbe:
     def html5SourceType(self):
         string = ''
         if self.mimetype is not None:
+            string += self.mimetype
+
             if self.mimetype == 'audio/mpeg':
                 return self.mimetype
-
-            string += self.mimetype
 
             video = None
             audio = None
