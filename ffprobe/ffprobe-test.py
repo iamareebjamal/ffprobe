@@ -1,8 +1,12 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 from ffprobe import FFProbe
 import unittest
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
 from os import listdir
 from os.path import isfile, join
@@ -22,11 +26,11 @@ class TestFFProbe(unittest.TestCase):
 
 		if not os.path.exists(self.tmp_dir):
 			os.makedirs(self.tmp_dir)
-			print "Downloading samples"
+			print("Downloading samples")
 			for url in self.test_sample_urls:
 				try:
-					print "Downloading " + url
-					sample = urllib.URLopener()
+					print("Downloading " + url)
+					sample = urllib.request.URLopener()
 					sample.retrieve(url, self.tmp_dir + "/" + url.split('/')[-1])
 				except:
 					pass
@@ -37,9 +41,9 @@ class TestFFProbe(unittest.TestCase):
 	def test_sample_media(self):
 		samples = [ f for f in listdir(self.tmp_dir) if isfile(join(self.tmp_dir,f)) ]
 		for sample in samples:
-			print "Probing " + sample
+			print("Probing " + sample)
 			metadata = FFProbe(self.tmp_dir + "/" + sample)
-			print "HTML5 Media Source Type: " + metadata.html5SourceType()
+			print("HTML5 Media Source Type: " + metadata.html5SourceType())
 			self.assertNotEqual(metadata.durationSeconds(), 0.0)
 			self.assertNotEqual(metadata.bitrate(), 0.0)
 			for stream in metadata.streams:

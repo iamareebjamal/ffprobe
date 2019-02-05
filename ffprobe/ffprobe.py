@@ -1,10 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Filename: ffprobe.py
 """
 Python wrapper for ffprobe command line tool. ffprobe must exist in the path or in a common installation path
 """
 
-version = '0.4'
+from __future__ import print_function
+
+from builtins import str
+from builtins import hex
+from builtins import object
 
 import subprocess
 import re
@@ -14,8 +18,11 @@ from os import listdir
 from os.path import isfile, join
 import json
 import mimetypes
+import platform
 
-class FFProbe(object):
+version = '0.6'
+
+class FFProbe:
     """
     FFProbe wraps the ffprobe command and pulls the data into an object form::
     metadata = FFProbe('multimedia-file.mov')
@@ -60,24 +67,24 @@ class FFProbe(object):
 
         # If source is file and it exists the use path, otherwise
         # open file and send contents to ffprobe through stdin
-        DEVNULL = open(os.devnull, 'wb')
         args = [ffprobe_cmd, "-show_streams", "-print_format", "json", "-show_format", "-i"]
-        if os.path.isfile(source):
-            try:
-                type, encoding = mimetypes.guess_type(source)
-                self.mimetype = type
-            except:
-                pass
-            args.append(source)
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=DEVNULL)
-        else:
-            args.append("-")
-            proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE, stderr=DEVNULL)
+        with open(os.devnull, 'wb') as DEVNULL:
+            if os.path.isfile(source):
+                try:
+                    type, encoding = mimetypes.guess_type(source)
+                    self.mimetype = type
+                except:
+                    pass
+                args.append(source)
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=DEVNULL)
+            else:
+                args.append("-")
+                proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE, stderr=DEVNULL)
 
         raw_out = ""
         while self.returncode is None:
             for line in proc.stdout:
-                raw_out += line
+                raw_out += line.decode('utf-8')
             self.returncode = proc.poll()
 
         proc.stdout.close()
@@ -182,7 +189,7 @@ class FFStream(object):
     An object representation of an individual stream in a multimedia file.
     """
     def __init__(self, obj):
-        for key in obj.keys():
+        for key in list(obj.keys()):
             self.__dict__[key] = obj[key]
 
     def isData(self):
@@ -357,16 +364,16 @@ def printMeta(path):
     stream_count = 1
     for s in m.streams:
         type = "Video" if s.isVideo else "Audio"
-        print "[ %s - Stream #%s - %s ]" % (name, stream_count, type)
+        print("[ %s - Stream #%s - %s ]" % (name, stream_count, type))
         stream_count += 1
         if s.isVideo():
-            print "Framerate: %f" % s.frameRate()
-            print "Frames: %i" % s.frames()
-            print "Width: %i" % s.frameSize()[0]
-            print "Height: %i" %  s.frameSize()[1]
-        print "Duration: %f" % s.durationSeconds()
-        print "Bitrate: %i" % s.bitrate()
-        print ""
+            print("Framerate: %f" % s.frameRate())
+            print("Frames: %i" % s.frames())
+            print("Width: %i" % s.frameSize()[0])
+            print("Height: %i" %  s.frameSize()[1])
+        print("Duration: %f" % s.durationSeconds())
+        print("Bitrate: %i" % s.bitrate())
+        print("")
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
@@ -382,4 +389,4 @@ if __name__ == '__main__':
         else:
             sys.exit(1)
     else:
-        print "Usage: python ffprobe.py <file>|<directory>"
+        print("Usage: python ffprobe.py <file>|<directory>")

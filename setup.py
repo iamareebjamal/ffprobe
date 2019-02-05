@@ -1,17 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from distutils.core import setup
 
 setup(
     name='ffprobe',
-    version='0.4',
+    version='0.6',
     description='Wrapper around ffprobe command to extract metadata from media files',
     author='Simon Hargreaves',
     author_email='simon@simon-hargreaves.com',
     url='http://www.simon-hargreaves.com/ffprobe',
     packages=['ffprobe'],
 	classifiers=[
-		'Development Status :: 4 - Alpha',
+		'Development Status :: 6 - Alpha',
 		'Environment :: Console',
 		'Intended Audience :: Developers',
 		'License :: OSI Approved :: MIT License',
