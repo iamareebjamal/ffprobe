@@ -115,6 +115,12 @@ class FFProbe:
 
         # @todo If mp4 extension but no video stream then set mimetype to audio/mp4
 
+    def __str__(self):
+        return "<FFProbe mime='%s' streams='%s'>" % (self.html5SourceType(), str(self.streams))
+    
+    def __repr__(self):
+        return self.__str__()
+    
     # @todo Needs to follow http://tools.ietf.org/html/rfc6381
     # @todo Need to add mp4v and mp4a (aac)
     def html5SourceType(self):
@@ -194,6 +200,12 @@ class FFStream(object):
     def __init__(self, obj):
         for key in list(obj.keys()):
             self.__dict__[key] = obj[key]
+    
+    def __str__(self):
+        return "<FFStream %s type='%s' codec='%s'>" % (self.index, self.codec_type, self.codec())
+    
+    def __repr__(self):
+        return self.__str__()
 
     def isData(self):
         """
