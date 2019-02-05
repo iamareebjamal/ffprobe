@@ -10,6 +10,7 @@ from builtins import str
 from builtins import hex
 from builtins import object
 
+import errno
 import subprocess
 import re
 import os
@@ -77,6 +78,8 @@ class FFProbe:
                     pass
                 args.append(source)
                 proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=DEVNULL)
+            elif isinstance(source, str):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), source)
             else:
                 args.append("-")
                 proc = subprocess.Popen(args, stdin=source, stdout=subprocess.PIPE, stderr=DEVNULL)
