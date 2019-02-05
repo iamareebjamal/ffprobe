@@ -366,7 +366,7 @@ def printMeta(path):
     name = os.path.split(path)[1]
     stream_count = 1
     for s in m.streams:
-        type = "Video" if s.isVideo else "Audio"
+        type = "Video" if s.isVideo() else "Audio"
         print("[ %s - Stream #%s - %s ]" % (name, stream_count, type))
         stream_count += 1
         if s.isVideo():
